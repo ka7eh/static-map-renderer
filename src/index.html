@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="./leaflet/leaflet.css" />
+    <script src="./leaflet/leaflet.js"></script>
+
+    <script src="./leaflet/leaflet-image.js"></script>
+
+</head>
+
+<body>
+    <div id="mapid" style="width: %(WIDTH)spx; height: %(HEIGHT)spx;"></div>
+    <script>
+        const config = JSON.parse('%(CONFIG)s')
+
+        const layers = []
+        let remoteTiles = 0
+
+        const createSnapshot = () => {
+            if (remoteTiles === 0) {
+                leafletImage(mymap, (err, canvas) => {
+                    const mapImage = atob(canvas.toDataURL('image/png').split(',')[1])
+                    const mapImageBuffer = new ArrayBuffer(mapImage.length);
+                    const image = new Uint8Array(mapImageBuffer);
+                    for (let i=0; i < mapImage.length; i++) {
+                        image[i] = mapImage.charCodeAt(i) & 0xff;
+                    }
+
+                    const blob = new Blob([mapImageBuffer], { type: 'octet/stream' })
+                    const reader = new FileReader()
+                    
+                    reader.addEventListener('loadend', (e) => {
+                        const node = document.createElement('a')
+                        node.setAttribute('id', 'DownloadAnchor')
+                        node.setAttribute('href', e.target.result)
+                        node.setAttribute('download', `${config.image_name}.png`)
+                        document.body.appendChild(node)
+                        node.click()
+                    })
+                    reader.readAsDataURL(blob)
+                })
+            }
+        }
+
+        if (config.layers) {
+            config.layers.forEach((layer) => {
+                const l = L[layer.type](...layer.args)
+                if (l._events && l._events.tileunload) {
+                    remoteTiles += 1
+                    l.on('load', () => {
+                        remoteTiles -= 1
+                        createSnapshot()
+                    })
+                }
+                layers.push(l)
+            })
+        }
+
+        var mymap = L.map('mapid', {
+            layers,
+            preferCanvas: true
+        })
+        mymap.on('load', createSnapshot)
+        mymap.fitBounds(config.bounds)
+
+    </script>
+
+</body>
+
+</html>

@@ -18,14 +18,13 @@ TMP_DIR = '/tmp'
 
 
 def generate_map(config):
+    renderer = config.pop('renderer', 'leaflet')
     width = config.pop('width')
     height = config.pop('height')
 
-    # start the virtual display
     display = Display(visible=0, size=(width, height))
     display.start()
 
-    # configure firefox profile to automatically save png files in the current directory
     fp = webdriver.FirefoxProfile()
     fp.set_preference('browser.download.folderList', 2)
     fp.set_preference('browser.download.manager.showWhenStarting', False)
@@ -38,7 +37,7 @@ def generate_map(config):
     )
     browser.set_window_size(width + dx, height + dy)
 
-    with open('index.html', 'r') as f:
+    with open('{}.html'.format(renderer), 'r') as f:
         html = f.read()
 
     image = None
@@ -76,10 +75,8 @@ def generate_map(config):
                     break
                 tries -= 1
 
-        # quit the browser
         browser.quit()
 
-        # stop the display
         display.stop()
 
         return image

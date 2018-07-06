@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="./static/leaflet/leaflet.css" />
+    <script src="./static/leaflet/leaflet.js"></script>
+
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            width: %(WIDTH)spx;
+            height: %(HEIGHT)spx;
+        }
+
+        #Map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 0;
+            margin: 0;
+            width: %(WIDTH)spx;
+            height: %(HEIGHT)spx;
+        }
+
+        #Ready {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="Map"></div>
+    <script>
+        const config = JSON.parse('%(CONFIG)s')
+
+        const layers = []
+        let remoteTiles = 0
+
+        const checkStatus = () => {
+            if (remoteTiles === 0) {
+                const node = document.createElement('span')
+                node.setAttribute('id', 'Ready')
+                setTimeout(() => document.body.appendChild(node), 500)
+            }
+        }
+
+        if (config.layers) {
+            config.layers.forEach((layer) => {
+                const l = L[layer.type](...layer.args)
+                if (l._events && l._events.tileunload) {
+                    remoteTiles += 1
+                    l.on('load', () => {
+                        remoteTiles -= 1
+                        checkStatus()
+                    })
+                }
+                layers.push(l)
+            })
+        }
+
+        const mymap = L.map('Map', {
+            layers,
+            zoomControl: false
+        })
+        mymap.on('load', checkStatus)
+        mymap.fitBounds(config.bounds)
+
+    </script>
+
+</body>
+
+</html>

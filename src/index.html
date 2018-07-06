@@ -8,41 +8,44 @@
     <link rel="stylesheet" href="./leaflet/leaflet.css" />
     <script src="./leaflet/leaflet.js"></script>
 
-    <script src="./leaflet/leaflet-image.js"></script>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            width: %(WIDTH)spx;
+            height: %(HEIGHT)spx;
+        }
+
+        #Map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 0;
+            margin: 0;
+            width: %(WIDTH)spx;
+            height: %(HEIGHT)spx;
+        }
+
+        #Ready {
+            display: none;
+        }
+    </style>
 
 </head>
 
 <body>
-    <div id="mapid" style="width: %(WIDTH)spx; height: %(HEIGHT)spx;"></div>
+    <div id="Map"></div>
     <script>
         const config = JSON.parse('%(CONFIG)s')
 
         const layers = []
         let remoteTiles = 0
 
-        const createSnapshot = () => {
+        const checkStatus = () => {
             if (remoteTiles === 0) {
-                leafletImage(mymap, (err, canvas) => {
-                    const mapImage = atob(canvas.toDataURL('image/png').split(',')[1])
-                    const mapImageBuffer = new ArrayBuffer(mapImage.length);
-                    const image = new Uint8Array(mapImageBuffer);
-                    for (let i=0; i < mapImage.length; i++) {
-                        image[i] = mapImage.charCodeAt(i) & 0xff;
-                    }
-
-                    const blob = new Blob([mapImageBuffer], { type: 'octet/stream' })
-                    const reader = new FileReader()
-                    
-                    reader.addEventListener('loadend', (e) => {
-                        const node = document.createElement('a')
-                        node.setAttribute('id', 'DownloadAnchor')
-                        node.setAttribute('href', e.target.result)
-                        node.setAttribute('download', `${config.image_name}.png`)
-                        document.body.appendChild(node)
-                        node.click()
-                    })
-                    reader.readAsDataURL(blob)
-                })
+                const node = document.createElement('span')
+                node.setAttribute('id', 'Ready')
+                setTimeout(() => document.body.appendChild(node), 500)
             }
         }
 
@@ -53,18 +56,19 @@
                     remoteTiles += 1
                     l.on('load', () => {
                         remoteTiles -= 1
-                        createSnapshot()
+                        checkStatus()
                     })
                 }
                 layers.push(l)
             })
         }
 
-        var mymap = L.map('mapid', {
+        var mymap = L.map('Map', {
             layers,
+            zoomControl: false,
             preferCanvas: true
         })
-        mymap.on('load', createSnapshot)
+        mymap.on('load', checkStatus)
         mymap.fitBounds(config.bounds)
 
     </script>

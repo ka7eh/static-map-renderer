@@ -15,7 +15,11 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         data = json.loads(post_body)
         logging.info('POST request, Path: {}\n'.format(self.path))
 
-        image = renderer.generate_map(data)
+        image = None
+        try:
+            image = renderer.generate_map(data)
+        except:
+            pass
 
         if image:
             self.send_response(200)
@@ -23,8 +27,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(image)
         else:
-            self.send_response(500)
-            self.end_headers()
+            self.send_error(500)
 
 
 if __name__ == '__main__':

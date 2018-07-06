@@ -18,8 +18,8 @@ TMP_DIR = '/tmp'
 
 
 def generate_map(config):
-    width = config.pop('width', '800')
-    height = config.pop('height', '600')
+    width = config.pop('width')
+    height = config.pop('height')
 
     # start the virtual display
     display = Display(visible=0, size=(width, height))
@@ -33,6 +33,10 @@ def generate_map(config):
     fp.set_preference('browser.helperApps.neverAsk.saveToDisk', 'octet/stream')
 
     browser = webdriver.Firefox(firefox_profile=fp)
+    dx, dy = browser.execute_script(
+        'let w=window; return [w.outerWidth - w.innerWidth, w.outerHeight - w.innerHeight];'
+    )
+    browser.set_window_size(width + dx, height + dy)
 
     with open('index.html', 'r') as f:
         html = f.read()
@@ -56,32 +60,21 @@ def generate_map(config):
 
         browser.get('file://{}'.format(html_path))
 
-        delay = 5
-        tries = 10
-        success = False
+        delay = 10
+        tries = 3
 
         while True:
             try:
+                
                 WebDriverWait(browser, delay).until(
-                    EC.presence_of_element_located((By.ID, 'DownloadAnchor')))
-                success = True
+                    EC.presence_of_element_located((By.ID, 'Ready'))
+                )
+                image = base64.b64decode(browser.get_screenshot_as_base64())
                 break
             except TimeoutException:
                 if tries == 0:
                     break
                 tries -= 1
-
-        tries = 10
-        while success:
-            try:
-                with open(os.path.join(TMP_DIR, '{}.png'.format(image_name)), 'rb') as f:
-                    image = f.read()
-                break
-            except FileNotFoundError:
-                if tries == 0:
-                    break
-                tries -= 1
-                time.sleep(2)
 
         # quit the browser
         browser.quit()

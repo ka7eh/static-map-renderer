@@ -19,6 +19,7 @@ TMP_DIR = '/tmp'
 
 def generate_map(config):
     renderer = config.pop('renderer', 'leaflet')
+    output_format = config.pop('format', 'byte')
     width = config.pop('width')
     height = config.pop('height')
 
@@ -68,7 +69,11 @@ def generate_map(config):
                 WebDriverWait(browser, delay).until(
                     EC.presence_of_element_located((By.ID, 'Ready'))
                 )
-                image = base64.b64decode(browser.get_screenshot_as_base64())
+                screenshot = browser.get_screenshot_as_base64()
+                if output_format == 'byte':
+                    image = base64.b64decode(screenshot)
+                elif output_format == 'base64':
+                    image = bytes(screenshot, 'ascii')
                 break
             except TimeoutException:
                 if tries == 0:

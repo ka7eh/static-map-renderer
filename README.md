@@ -22,6 +22,7 @@ After the server started, you can send post requests to `localhost:8000` with a 
 | Name   	    | Type   | Description                                                                                                                    |
 |-------------|--------|--------------------------------------------------------------------------------------------------------------------------------|
 | renderer    | string | Renderer to use: `leaflet` or `mapbox` (default is `leaflet`)                                                                  |
+| format      | string | Output format: `bytes` or `base64` (default is `base64`)                                                                       |
 | width  	    | number | Image width                                                                                                                    |
 | height 	    | number | Image height                                                                                                                   |
 | mapboxToken | string | Access token for mapbox-gl                                                                                                     |
